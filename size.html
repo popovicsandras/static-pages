@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADF Core parts</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 50px;
+        }
+        .chartContainer {
+            width: 1000px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Parts what we might need from ADF Core for a UI library</h1>
+    <div class="chartContainer">
+        <canvas id="uiChart"></canvas>
+    </div>
+
+    <h1>Other (optional) parts what we might need but NOT as part of a UI library</h1>
+    <div class="chartContainer">
+        <canvas id="otherChart"></canvas>
+    </div>
+
+    <script>
+        function parseSize(sizeStr) {
+            let size = parseFloat(sizeStr);
+            if (sizeStr.includes('M')) {
+                size *= 1024; // Convert MB to KB
+            }
+            return size;
+        }
+
+        const uiColors = [
+            'rgba(54, 162, 235, 0.6)',
+            'rgba(75, 192, 192, 0.6)',
+        ];
+        const otherColors = [
+            'rgba(255, 206, 86, 0.6)',
+            'rgba(255, 159, 64, 0.6)',
+        ];
+        const grays = [
+            'rgba(0, 0, 0, 0.05)',
+            'rgba(0, 0, 0, 0.1)'
+        ];
+
+        const uiBlackList = [
+            'directives',
+            'form',
+            'viewer',
+            'card-view',
+            'app-config',
+            'i18n',
+            'assets',
+            'login',
+            'datatable',
+            'auth',
+            'pagination',
+            'interface',
+            'blank-page',
+            'translation',
+            'mock',
+            'about',
+            'models',
+            'testing',
+            'events'
+        ];
+
+        otherWhiteList = [
+            'form',
+            'viewer'
+        ];
+
+        // The JSON data
+        const data = [
+            { name: "directives", size: "88K" },
+            { name: "language-menu", size: "44K" },
+            { name: "comments", size: "108K" },
+            { name: "pagination", size: "88K" },
+            { name: "interface", size: "12K" },
+            { name: "blank-page", size: "16K" },
+            { name: "form", size: "1.1M" },
+            { name: "sorting-picker", size: "24K" },
+            { name: "snackbar-content", size: "36K" },
+            { name: "identity-user-info", size: "36K" },
+            { name: "progress", size: "16K" },
+            { name: "translation", size: "32K" },
+            { name: "auth", size: "468K" },
+            { name: "layout", size: "148K" },
+            { name: "mock", size: "196K" },
+            { name: "toolbar", size: "44K" },
+            { name: "about", size: "116K" },
+            { name: "models", size: "48K" },
+            { name: "search-text", size: "64K" },
+            { name: "context-menu", size: "60K" },
+            { name: "pipes", size: "120K" },
+            { name: "testing", size: "20K" },
+            { name: "styles", size: "104K" },
+            { name: "common", size: "200K" },
+            { name: "viewer", size: "1.4M" },
+            { name: "theming", size: "4.0K" },
+            { name: "button", size: "20K" },
+            { name: "info-drawer", size: "64K" },
+            { name: "card-view", size: "544K" },
+            { name: "avatar", size: "20K" },
+            { name: "templates", size: "56K" },
+            { name: "dialogs", size: "132K" },
+            { name: "dynamic-chip-list", size: "48K" },
+            { name: "app-config", size: "100K" },
+            { name: "icon", size: "24K" },
+            { name: "events", size: "16K" },
+            { name: "i18n", size: "344K" },
+            { name: "assets", size: "304K" },
+            { name: "notifications", size: "72K" },
+            { name: "login", size: "168K" },
+            { name: "header", size: "96K" },
+            { name: "datatable", size: "564K" },
+            { name: "services", size: "4.0K" },
+            { name: "clipboard", size: "36K" }
+        ];
+
+        const uiData = [...data];
+        uiData.sort((a, b) => {
+            const aIgnored = uiBlackList.includes(a.name);
+            const bIgnored = uiBlackList.includes(b.name);
+            if (aIgnored && !bIgnored) {
+                return 1;
+            } else if (!aIgnored && bIgnored) {
+                return -1;
+            }
+            return 0;
+        });
+
+        const labels = uiData.map(item => item.name);
+        const sizes = uiData.map(item => parseSize(item.size));
+
+        drawChart('uiChart', labels, sizes, uiColors, (label) => uiBlackList.includes(label));
+
+        const otherData = [...data];
+        otherData.sort((a, b) => {
+            const aIgnored = otherWhiteList.includes(a.name);
+            const bIgnored = otherWhiteList.includes(b.name);
+            if (aIgnored && !bIgnored) {
+                return -1;
+            } else if (!aIgnored && bIgnored) {
+                return 1;
+            }
+            return 0;
+        });
+
+        const otherLabels = otherData.map(item => item.name);
+        const otherSizes = otherData.map(item => parseSize(item.size));
+
+        drawChart('otherChart', otherLabels, otherSizes, otherColors, (label) => !otherWhiteList.includes(label));
+
+        function drawChart(id, labels, sizes, uiColors, isIgnored) {
+            const ctx = document.getElementById(id).getContext('2d');
+            const chart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Sizes of different parts',
+                        data: sizes,
+                        backgroundColor: (context) => {
+                            const index = context.dataIndex;
+                            const ignored = isIgnored(labels[index]);
+                            return ignored ? grays[index % grays.length]: uiColors[index % uiColors.length];
+                        }
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(tooltipItem) {
+                                    return labels[tooltipItem.dataIndex] + ': ' + sizes[tooltipItem.dataIndex] + ' KB';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
